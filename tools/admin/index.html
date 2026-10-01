@@ -254,14 +254,23 @@
                       <option value="archived">Arsip</option>
                     </select></label
                   >
-                  <label
-                    >Luas (m²)<input
-                      id="p-area"
-                      type="number"
-                      min="1"
-                      step="0.01"
-                      required
-                  /></label>
+                  <div class="wide area-field">
+                    <label
+                      >Luas (m²)<input
+                        id="p-area"
+                        type="number"
+                        min="1"
+                        step="0.01"
+                        required
+                    /></label>
+                    <button id="recalc-area" type="button">
+                      Hitung dari polygon
+                    </button>
+                    <p class="hint">
+                      Otomatis dihitung dari titik polygon; ketik manual untuk
+                      menimpa hasilnya (mis. sesuai dokumen survei).
+                    </p>
+                  </div>
                   <label
                     >Zonasi<input id="p-zonation" required maxlength="100"
                   /></label>
@@ -479,6 +488,27 @@
                       <option value="archived">Arsip</option>
                     </select></label
                   ><label
+                    >Kondisi aset<select id="i-condition">
+                      <option value="ok">OK</option>
+                      <option value="not_ok">Tidak OK</option>
+                    </select></label
+                  ><div id="infra-length-field" class="wide area-field" hidden>
+                    <label
+                      >Panjang (m)<input
+                        id="i-length"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                    /></label>
+                    <button id="recalc-length" type="button">
+                      Hitung dari jalur
+                    </button>
+                    <p class="hint">
+                      Otomatis dihitung dari titik jalur; ketik manual untuk
+                      menimpa hasilnya.
+                    </p>
+                  </div>
+                  <label
                     >Tanggal verifikasi<input
                       id="i-verified"
                       type="date" /></label

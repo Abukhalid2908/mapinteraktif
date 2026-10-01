@@ -77,6 +77,7 @@ export default function Home() {
       InfrastructureCategory[]
     >([]),
     [infrastructureQuery, setInfrastructureQuery] = useState(''),
+    [infrastructureCategory, setInfrastructureCategory] = useState(''),
     [selectedInfrastructure, setSelectedInfrastructure] =
       useState<Infrastructure | null>(null);
   const [query, setQuery] = useState(''),
@@ -205,8 +206,14 @@ export default function Home() {
     [activePlots, plotStatus, plotQuery],
   );
   const filteredInfrastructure = useMemo(() => {
+    if (!infrastructureCategory) return [];
     const normalized = infrastructureQuery.trim().toLowerCase();
     return infrastructure.filter((item) => {
+      if (
+        infrastructureCategory !== 'all' &&
+        item.category !== infrastructureCategory
+      )
+        return false;
       const category = infrastructureCategories.find(
         (entry) => entry.id === item.category,
       );
@@ -215,7 +222,12 @@ export default function Home() {
         .toLowerCase()
         .includes(normalized);
     });
-  }, [infrastructure, infrastructureCategories, infrastructureQuery]);
+  }, [
+    infrastructure,
+    infrastructureCategories,
+    infrastructureQuery,
+    infrastructureCategory,
+  ]);
   const iconSet: Record<string, typeof Coffee> = {
     resto_cafe: Utensils,
     cafe: Coffee,
@@ -652,6 +664,8 @@ export default function Home() {
               categories={infrastructureCategories}
               query={infrastructureQuery}
               setQuery={setInfrastructureQuery}
+              selectedCategory={infrastructureCategory}
+              setSelectedCategory={setInfrastructureCategory}
               selected={selectedInfrastructure}
               onSelect={setSelectedInfrastructure}
             />
@@ -669,6 +683,7 @@ export default function Home() {
             selectedPlot={selectedPlot}
             onPlotSelect={setSelectedPlot}
             infrastructure={filteredInfrastructure}
+            infrastructureCategories={infrastructureCategories}
             selectedInfrastructure={selectedInfrastructure}
             onInfrastructureSelect={setSelectedInfrastructure}
           />
@@ -701,7 +716,9 @@ export default function Home() {
                 : 'Direktori kawasan'}
             <span>
               {surface === 'infrastructure'
-                ? 'Pilih titik atau jalur untuk melihat namanya.'
+                ? infrastructureCategory
+                  ? 'Pilih titik atau jalur untuk melihat namanya.'
+                  : 'Pilih kategori di panel kiri untuk menampilkan infrastruktur.'
                 : demo
                   ? 'Nama dan titik fasilitas adalah contoh.'
                   : origin
@@ -900,6 +917,107 @@ export default function Home() {
                 Luas dan batas pada peta bersifat informatif. Gunakan dokumen
                 survei untuk keputusan resmi.
               </p>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
+      <Sheet
+        open={!!selectedInfrastructure}
+        onOpenChange={(open) => {
+          if (!open) setSelectedInfrastructure(null);
+        }}
+      >
+        <SheetContent side="right" className="detail-sheet">
+          {selectedInfrastructure && (
+            <div className="detail-body plot-detail">
+              <span className="eyebrow">INFRASTRUKTUR KAWASAN</span>
+              <SheetTitle className="detail-title">
+                {selectedInfrastructure.name}
+              </SheetTitle>
+              <dl>
+                <dt>Kategori</dt>
+                <dd>
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      display: 'inline-block',
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      marginRight: 6,
+                      verticalAlign: 'middle',
+                      backgroundColor:
+                        infrastructureCategories.find(
+                          (entry) =>
+                            entry.id === selectedInfrastructure.category,
+                        )?.color || '#397fc0',
+                    }}
+                  />
+                  {infrastructureCategories.find(
+                    (entry) => entry.id === selectedInfrastructure.category,
+                  )?.label || selectedInfrastructure.category}
+                </dd>
+                <dt>Status</dt>
+                <dd>
+                  {selectedInfrastructure.status === 'published'
+                    ? 'Terbit'
+                    : selectedInfrastructure.status}
+                </dd>
+                <dt>Kondisi</dt>
+                <dd>
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      padding: '2px 10px',
+                      borderRadius: 999,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: '#fff',
+                      backgroundColor:
+                        selectedInfrastructure.condition === 'not_ok'
+                          ? '#dc2626'
+                          : '#16a34a',
+                    }}
+                  >
+                    {selectedInfrastructure.condition === 'not_ok'
+                      ? 'Tidak OK'
+                      : 'OK'}
+                  </span>
+                </dd>
+                <dt>Jenis</dt>
+                <dd>
+                  {selectedInfrastructure.geometry_type === 'point'
+                    ? 'Titik'
+                    : 'Jalur'}
+                </dd>
+                {selectedInfrastructure.geometry_type === 'line' && (
+                  <>
+                    <dt>Panjang</dt>
+                    <dd>
+                      {selectedInfrastructure.length_m
+                        ? selectedInfrastructure.length_m.toLocaleString(
+                            'id-ID',
+                            { maximumFractionDigits: 1 },
+                          ) + ' m'
+                        : '—'}
+                    </dd>
+                  </>
+                )}
+                <dt>Deskripsi</dt>
+                <dd>
+                  {selectedInfrastructure.description || 'Tidak ada deskripsi.'}
+                </dd>
+                <dt>Sumber</dt>
+                <dd>{selectedInfrastructure.source || '—'}</dd>
+                <dt>Verifikasi</dt>
+                <dd>
+                  {selectedInfrastructure.verified_at
+                    ? new Date(
+                        selectedInfrastructure.verified_at,
+                      ).toLocaleDateString('id-ID')
+                    : 'Belum diverifikasi'}
+                </dd>
+              </dl>
             </div>
           )}
         </SheetContent>

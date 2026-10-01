@@ -1,12 +1,12 @@
 # MM2100 · Jelajah Kawasan
 
-Aplikasi peta fasilitas dengan React, Vinext/Vite, Tailwind, komponen shadcn/ui, Leaflet, dan MapLibre. Tersedia dua mode: demo Sites statis dengan JSON, serta backend PHP + MariaDB/MySQL dengan login admin untuk XAMPP/Azure. Node.js >=22.13 diperlukan (Node 22 direkomendasikan untuk build di Windows).
+Aplikasi peta fasilitas dengan React, Vinext/Vite, Tailwind, komponen shadcn/ui, Leaflet, dan MapLibre. Tersedia dua mode: demo Sites statis dengan JSON, serta backend Node.js (Express + MySQL/MariaDB) dengan login admin untuk pengembangan lokal/Azure/cPanel. Node.js >=22.13 diperlukan (Node 22 direkomendasikan untuk build di Windows).
 
-## Admin dan database (XAMPP / Azure)
+## Admin dan database (lokal / Azure / cPanel)
 
-Lihat [panduan backend dan deployment Azure](deploy/azure/README.md). Halaman `/admin/` pada server PHP menyediakan akun email/password, penyimpanan fasilitas langsung, status draft/terbit/arsip, kontrol revisi, dan audit perubahan. Database lokal bernama `mm2100_map`; konfigurasi privat berada di `backend/config.local.php`. Situs Sites sebelumnya tetap memakai JSON dan belum terhubung ke backend ini.
+Lihat [panduan backend dan deployment Azure](deploy/azure/README.md). Halaman `/admin/` pada server Node menyediakan akun email/password, penyimpanan fasilitas langsung, status draft/terbit/arsip, kontrol revisi, dan audit perubahan. Database lokal bernama `mm2100_map`; konfigurasi privat berada di `~/.mm2100/config.local.json` (di luar folder proyek, karena server dev menyajikan seluruh folder proyek secara statis). Situs Sites sebelumnya tetap memakai JSON dan belum terhubung ke backend ini.
 
-Perintah build admin: `npm run build:admin`. Uji integrasi terisolasi: `npm run test:backend` (memerlukan MariaDB XAMPP lokal). Paket Azure: `npm run package:azure` setelah build frontend dan admin. Pengujian backend membuat lalu menghapus database dan akun khusus dengan nama acak `mm2100_test_*`, tidak memakai data aplikasi.
+Jalankan backend lokal: `npm run dev:backend` (default port 2801). Perintah build admin: `npm run build:admin`. Uji integrasi terisolasi: `npm run test:backend` (memerlukan MySQL/MariaDB lokal). Paket Azure: `npm run package:azure` setelah build frontend dan admin. Pengujian backend membuat lalu menghapus database dan akun khusus dengan nama acak `mm2100_test_*`, tidak memakai data aplikasi.
 
 ## Menjalankan
 

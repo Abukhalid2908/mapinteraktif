@@ -40,6 +40,9 @@ next-env.d.ts
 /editor-dist/
 *.tsbuildinfo
 *-master.json
-/backend/config.local.php
+# Local backend secrets live outside the repo at ~/.mm2100/config.local.json
+# (the dev server serves the whole project directory statically, so nothing
+# under this repo root should ever hold credentials).
 /admin-dist/
 /azure-dist/
+*-out.log

@@ -16,6 +16,7 @@ export default function LeafletMap({
   selectedPlot,
   onPlotSelect,
   infrastructure = [],
+  infrastructureCategories = [],
   selectedInfrastructure,
   onInfrastructureSelect,
   onSelect,
@@ -41,6 +42,7 @@ export default function LeafletMap({
   selectedPlot?: import('@/lib/plots').Plot | null;
   onPlotSelect?: (p: import('@/lib/plots').Plot) => void;
   infrastructure?: import('@/lib/infrastructure').Infrastructure[];
+  infrastructureCategories?: import('@/lib/infrastructure').InfrastructureCategory[];
   selectedInfrastructure?: import('@/lib/infrastructure').Infrastructure | null;
   onInfrastructureSelect?: (
     item: import('@/lib/infrastructure').Infrastructure,
@@ -237,22 +239,29 @@ export default function LeafletMap({
         );
         bounds.push(...points);
         const active = selectedInfrastructure?.id === item.id;
+        const notOk = item.condition === 'not_ok';
+        const categoryColor = infrastructureCategories.find(
+          (entry) => entry.id === item.category,
+        )?.color;
+        const baseColor = notOk ? '#dc2626' : categoryColor || '#397fc0';
         const shape =
           item.geometry_type === 'point'
             ? L.circleMarker(points[0], {
                 radius: active ? 11 : 8,
                 color: '#fff',
                 weight: 3,
-                fillColor: '#397fc0',
+                fillColor: baseColor,
                 fillOpacity: 1,
               })
             : L.polyline(points, {
-                color: active ? '#173f31' : '#397fc0',
+                color: baseColor,
                 weight: active ? 7 : 5,
                 opacity: 0.9,
               });
         shape
-          .bindTooltip(item.name, { direction: 'top' })
+          .bindTooltip(item.name + (notOk ? ' — Tidak OK' : ''), {
+            direction: 'top',
+          })
           .on('click', () => onInfrastructureSelect?.(item))
           .addTo(group);
       }
@@ -277,6 +286,7 @@ export default function LeafletMap({
   }, [
     mode,
     infrastructure,
+    infrastructureCategories,
     selectedInfrastructure?.id,
     onInfrastructureSelect,
     ready,

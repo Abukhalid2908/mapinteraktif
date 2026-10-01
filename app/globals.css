@@ -415,6 +415,10 @@ h1 > span {
   font-size: 9px;
   color: #7b8475;
 }
+.infra-condition-flag {
+  color: #dc2626;
+  font-weight: 700;
+}
 .facility-copy > strong {
   font-size: 13px;
   font-weight: 600;
@@ -1653,38 +1657,41 @@ h1 > span {
 }
 @media (min-width: 761px) {
   .explorer-workspace .location-control {
-    top: 128px;
+    top: 270px;
     bottom: auto;
     right: 24px;
     left: auto;
   }
 }
 
-/* Keep the public map controls in one vertical rail so they never cover each other. */
+/* Keep the public map controls in one vertical rail so they never cover each other.
+   .map-controls (zoom +/-/recenter) always sits at top:24/right:24 and is
+   roughly 122px tall (3 stacked 40px buttons); the rest of the rail is
+   offset below it. */
 .explorer-workspace .view-mode {
-  top: 24px;
+  top: 160px;
   right: 24px;
   left: auto;
 }
 .explorer-workspace .basemap-mode {
-  top: 76px;
+  top: 216px;
   right: 24px;
   left: auto;
 }
 
 @media (max-width: 760px) {
   .explorer-workspace .view-mode {
-    top: 12px;
+    top: 144px;
     right: 12px;
     left: auto;
   }
   .explorer-workspace .basemap-mode {
-    top: 60px;
+    top: 192px;
     right: 12px;
     left: auto;
   }
   .explorer-workspace .location-control {
-    top: 104px;
+    top: 238px;
     right: 12px;
     bottom: auto;
     left: auto;

@@ -2,6 +2,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './style.css';
 import { markerIcons } from '../../lib/marker-icons';
+import { polygonAreaM2, lineLengthM } from '../../lib/data.mjs';
 const $ = (id) => document.getElementById(id);
 let csrf = '',
   setup = false,
@@ -55,6 +56,7 @@ let categoryRows = [],
   plotRecords = [],
   selectedPlot = null,
   plotDirty = false,
+  plotAreaAuto = true,
   plotMap,
   plotLayer,
   plotVertexLayer,
@@ -62,6 +64,7 @@ let categoryRows = [],
   infraRecords = [],
   selectedInfra = null,
   infraDirty = false,
+  infraLengthAuto = true,
   infraMap,
   infraShape,
   infraVertices,
@@ -490,6 +493,10 @@ function renderPlotShape(fit = true) {
   $('point-count').textContent = plotPoints.length + ' titik';
   $('form-point-count').textContent = plotPoints.length + ' titik';
   $('open-plot-form').disabled = !selectedPlot || plotPoints.length < 3;
+  if (plotAreaAuto && plotPoints.length >= 3)
+    $('p-area').value = polygonAreaM2([...plotPoints, plotPoints[0]]).toFixed(
+      2,
+    );
   if (fit && plotLayer && plotPoints.length)
     plotMap.fitBounds(plotLayer.getBounds(), {
       padding: [28, 28],
@@ -542,6 +549,7 @@ async function refreshPlots() {
 function selectPlot(record) {
   selectedPlot = structuredClone(record);
   plotDirty = false;
+  plotAreaAuto = true;
   $('plot-empty').hidden = true;
   $('plot-form-modal').hidden = true;
   $('plot-form-message').textContent = '';
@@ -595,6 +603,20 @@ $('plot-form-modal').onclick = (event) => {
 };
 $('plot-form').oninput = () => {
   plotDirty = true;
+};
+$('p-area').oninput = () => {
+  plotAreaAuto = false;
+};
+$('recalc-area').onclick = () => {
+  if (plotPoints.length < 3) {
+    message('Gambar polygon minimal 3 titik dahulu.', true);
+    return;
+  }
+  plotAreaAuto = true;
+  plotDirty = true;
+  $('p-area').value = polygonAreaM2([...plotPoints, plotPoints[0]]).toFixed(
+    2,
+  );
 };
 $('undo-point').onclick = () => {
   plotPoints.pop();
@@ -813,6 +835,9 @@ function renderInfra(fit = true) {
   $('infra-point-count').textContent = infraPoints.length + ' titik';
   $('open-infra-form').disabled =
     !selectedInfra || infraPoints.length < (point ? 1 : 2);
+  $('infra-length-field').hidden = point;
+  if (!point && infraLengthAuto && infraPoints.length >= 2)
+    $('i-length').value = lineLengthM(infraPoints).toFixed(2);
   if (fit && infraShape) {
     if (point) infraMap.setView(latlngs[0], 17);
     else
@@ -839,7 +864,11 @@ function renderInfraList() {
       '<strong></strong><small></small><span class="plot-edit-label">Edit →</span>';
     b.querySelector('strong').textContent = record.item.name;
     b.querySelector('small').textContent =
-      infraLabels[record.item.category] + ' · ' + record.item.geometry_type;
+      infraLabels[record.item.category] +
+      ' · ' +
+      record.item.geometry_type +
+      (record.item.condition === 'not_ok' ? ' · Tidak OK' : '');
+    if (record.item.condition === 'not_ok') b.classList.add('infra-not-ok');
     b.onclick = () => {
       if (canLeave()) selectInfra(record);
     };
@@ -1070,6 +1099,7 @@ $('save-infra-import').onclick = async () => {
 function selectInfra(record) {
   selectedInfra = structuredClone(record);
   infraDirty = false;
+  infraLengthAuto = true;
   const i = record.item;
   $('infra-title').textContent = record.revision
     ? 'Edit infrastruktur'
@@ -1080,6 +1110,8 @@ function selectInfra(record) {
   $('i-geometry').value = i.geometry_type || 'line';
   $('infra-geometry-mode').value = i.geometry_type || 'line';
   $('i-status').value = i.status || 'draft';
+  $('i-condition').value = i.condition || 'ok';
+  $('i-length').value = i.length_m || '';
   $('i-description').value = i.description || '';
   $('i-source').value = i.source || '';
   $('i-verified').value = i.verified_at || '';
@@ -1104,6 +1136,8 @@ $('new-infra').onclick = () => {
         category: 'water_pipe',
         geometry_type: 'line',
         status: 'draft',
+        condition: 'ok',
+        length_m: null,
         description: '',
         source: '',
         verified_at: null,
@@ -1181,6 +1215,18 @@ $('close-infra-form').onclick = () => {
 $('infra-form').oninput = () => {
   infraDirty = true;
 };
+$('i-length').oninput = () => {
+  infraLengthAuto = false;
+};
+$('recalc-length').onclick = () => {
+  if (infraPoints.length < 2) {
+    message('Gambar jalur minimal 2 titik dahulu.', true);
+    return;
+  }
+  infraLengthAuto = true;
+  infraDirty = true;
+  $('i-length').value = lineLengthM(infraPoints).toFixed(2);
+};
 $('infra-form').onsubmit = async (e) => {
   e.preventDefault();
   if (!selectedInfra) return;
@@ -1190,6 +1236,9 @@ $('infra-form').onsubmit = async (e) => {
     category: $('i-category').value,
     geometry_type: $('i-geometry').value,
     status: $('i-status').value,
+    condition: $('i-condition').value,
+    length_m:
+      $('i-geometry').value === 'line' ? Number($('i-length').value) : null,
     description: $('i-description').value.trim(),
     source: $('i-source').value.trim(),
     verified_at: $('i-verified').value || null,

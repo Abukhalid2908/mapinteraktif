@@ -1,5 +1,9 @@
 'use client';
-import { Cable, CircleDot, Search, Waypoints } from 'lucide-react';
+import { Cable, CircleDot, Layers, Search, Waypoints } from 'lucide-react';
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from '@/components/ui/native-select';
 import type {
   Infrastructure,
   InfrastructureCategory,
@@ -10,6 +14,8 @@ export default function InfrastructureDirectory({
   categories,
   query,
   setQuery,
+  selectedCategory,
+  setSelectedCategory,
   selected,
   onSelect,
 }: {
@@ -17,6 +23,8 @@ export default function InfrastructureDirectory({
   categories: InfrastructureCategory[];
   query: string;
   setQuery: (value: string) => void;
+  selectedCategory: string;
+  setSelectedCategory: (value: string) => void;
   selected: Infrastructure | null;
   onSelect: (item: Infrastructure) => void;
 }) {
@@ -25,7 +33,28 @@ export default function InfrastructureDirectory({
       <div className="directory-head plot-directory-head">
         <span className="eyebrow">INFRASTRUKTUR KAWASAN</span>
         <h1>Jaringan & aset</h1>
-        <p>Temukan titik aset dan jalur utilitas yang telah diterbitkan.</p>
+        <p>Pilih kategori untuk menampilkan titik aset dan jalur utilitas.</p>
+        <label className="search-box infra-category-select">
+          <Layers size={18} />
+          <NativeSelect
+            aria-label="Pilih kategori infrastruktur"
+            value={selectedCategory}
+            onChange={(event) => setSelectedCategory(event.target.value)}
+            className="w-full"
+          >
+            <NativeSelectOption value="">
+              Pilih kategori…
+            </NativeSelectOption>
+            <NativeSelectOption value="all">
+              Semua kategori
+            </NativeSelectOption>
+            {categories.map((entry) => (
+              <NativeSelectOption key={entry.id} value={entry.id}>
+                {entry.label}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        </label>
         <label className="search-box">
           <Search size={18} />
           <input
@@ -33,6 +62,7 @@ export default function InfrastructureDirectory({
             placeholder="Cari nama atau jenis aset…"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
+            disabled={!selectedCategory}
           />
         </label>
         <div className="plot-summary infra-summary">
@@ -60,6 +90,7 @@ export default function InfrastructureDirectory({
               (entry) => entry.id === item.category,
             );
             const Icon = item.geometry_type === 'point' ? CircleDot : Waypoints;
+            const notOk = item.condition === 'not_ok';
             return (
               <button
                 key={item.id}
@@ -69,13 +100,20 @@ export default function InfrastructureDirectory({
               >
                 <span
                   className="infra-public-icon"
-                  style={{ backgroundColor: category?.color || '#397fc0' }}
+                  style={{
+                    backgroundColor: notOk
+                      ? '#dc2626'
+                      : category?.color || '#397fc0',
+                  }}
                 >
                   <Icon size={21} />
                 </span>
                 <span className="facility-copy">
                   <span className="category-label">
                     {category?.label || item.category}
+                    {notOk && (
+                      <span className="infra-condition-flag"> · Tidak OK</span>
+                    )}
                   </span>
                   <strong>{item.name}</strong>
                   <span className="facility-address">
@@ -83,6 +121,13 @@ export default function InfrastructureDirectory({
                       (item.geometry_type === 'point'
                         ? 'Aset titik'
                         : 'Jalur utilitas')}
+                    {item.geometry_type === 'line' && item.length_m
+                      ? ' · ' +
+                        item.length_m.toLocaleString('id-ID', {
+                          maximumFractionDigits: 1,
+                        }) +
+                        ' m'
+                      : ''}
                   </span>
                 </span>
                 <Cable size={17} className="card-arrow" />
@@ -92,8 +137,16 @@ export default function InfrastructureDirectory({
         ) : (
           <div className="empty-state">
             <Cable />
-            <h2>Belum ada infrastruktur</h2>
-            <p>Ubah pencarian atau terbitkan data melalui halaman admin.</p>
+            <h2>
+              {selectedCategory
+                ? 'Belum ada infrastruktur'
+                : 'Pilih kategori dahulu'}
+            </h2>
+            <p>
+              {selectedCategory
+                ? 'Ubah pencarian atau terbitkan data melalui halaman admin.'
+                : 'Gunakan dropdown di atas untuk menampilkan titik atau jalur infrastruktur.'}
+            </p>
           </div>
         )}
       </div>

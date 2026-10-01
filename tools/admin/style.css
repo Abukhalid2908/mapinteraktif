@@ -301,6 +301,20 @@ button:disabled {
   grid-template-columns: 1fr 1fr;
   gap: 0 20px;
 }
+.area-field {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+.area-field label {
+  flex: 1;
+  min-width: 160px;
+}
+.area-field .hint {
+  flex-basis: 100%;
+  margin: 0;
+}
 .wide {
   grid-column: 1/-1;
 }
@@ -830,6 +844,10 @@ textarea:focus {
 #infra-count {
   color: #56705e;
   font-size: 14px;
+}
+#infra-list button.infra-not-ok small {
+  color: #dc2626;
+  font-weight: 600;
 }
 .infra-map-tools {
   position: absolute;

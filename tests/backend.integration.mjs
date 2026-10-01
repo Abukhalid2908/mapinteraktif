@@ -1,11 +1,12 @@
 // Integration suite uses a disposable database/account, never the application data.
-import { spawn, spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'),
-  php = process.env.PHP_BIN || 'C:/xampp/php/php.exe';
+import { readFile } from 'node:fs/promises';
+import mysql from 'mysql2/promise';
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const id = 'mm2100_test_' + crypto.randomBytes(5).toString('hex');
 const dbPassword = crypto.randomBytes(24).toString('hex');
 const env = {
@@ -17,49 +18,31 @@ const env = {
   DB_PASSWORD: dbPassword,
   APP_ORIGIN: 'http://127.0.0.1:8087',
   ALLOW_LOCAL_SETUP: '1',
+  PORT: '8087',
+  HOST: '127.0.0.1',
 };
-function sql(code) {
-  const r = spawnSync(php, ['-r', code], { cwd: root, env, encoding: 'utf8' });
-  if (r.status !== 0) throw Error(r.stderr || r.stdout);
-  return r.stdout;
-}
-const connect =
-  "$p=new PDO('mysql:host=127.0.0.1;charset=utf8mb4','root','',[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);$db=getenv('DB_NAME');if(!preg_match('/^mm2100_test_[a-f0-9]{10}$/D',$db))exit(1);";
+if (!/^mm2100_test_[a-f0-9]{10}$/.test(id)) throw Error('unexpected id shape');
 let server;
+let rootConn;
 (async () => {
   try {
-    sql(
-      connect +
-        "$p->exec('CREATE DATABASE `'.$db.'` CHARACTER SET utf8mb4');$p->exec(\"CREATE USER '\".$db.\"'@'127.0.0.1' IDENTIFIED BY \".$p->quote(getenv('DB_PASSWORD')));$p->exec(\"GRANT SELECT,INSERT,UPDATE,DELETE ON `\".$db.\"`.* TO '\".$db.\"'@'127.0.0.1'\");$p->exec('USE `'.$db.'`');$p->exec(file_get_contents('backend/schema.sql'));",
-    );
-    server = spawn(php, ['-S', '127.0.0.1:8087', 'backend/router.php'], {
+    rootConn = await mysql.createConnection({ host: '127.0.0.1', user: 'root', password: '', multipleStatements: true });
+    await rootConn.query('CREATE DATABASE `' + id + '` CHARACTER SET utf8mb4');
+    await rootConn.query("CREATE USER '" + id + "'@'127.0.0.1' IDENTIFIED BY ?", [dbPassword]);
+    await rootConn.query('GRANT SELECT,INSERT,UPDATE,DELETE ON `' + id + '`.* TO \'' + id + "'@'127.0.0.1'");
+    await rootConn.query('USE `' + id + '`');
+    await rootConn.query(await readFile(path.join(root, 'backend/schema.sql'), 'utf8'));
+    server = spawn(process.execPath, ['backend/server.mjs'], {
       cwd: root,
       env,
-      stdio: ['ignore', 'ignore', 'pipe'],
+      stdio: ['ignore', 'ignore', 'inherit'],
     });
     await new Promise((resolve, reject) => {
-      const timer = setTimeout(
-        () => reject(Error('Test server did not start')),
-        5000,
+      server.once('error', reject);
+      server.once('exit', (code) =>
+        reject(Error('Test server exited before it was ready (code ' + code + ')')),
       );
-      server.once('error', (e) => {
-        clearTimeout(timer);
-        reject(e);
-      });
-      server.once('exit', () => {
-        clearTimeout(timer);
-        reject(Error('Test server port unavailable; no API requests sent'));
-      });
-      server.stderr.on('data', (chunk) => {
-        if (
-          chunk
-            .toString()
-            .includes('Development Server (http://127.0.0.1:8087) started')
-        ) {
-          clearTimeout(timer);
-          resolve();
-        }
-      });
+      setTimeout(resolve, 300);
     });
     const origin = env.APP_ORIGIN;
     let ready = false;
@@ -213,13 +196,10 @@ let server;
     );
     await c.request('login', { ...credentials, password: 'wrong' }, 401);
     await c.request('login', credentials);
-    const evidence = JSON.parse(
-      sql(
-        "require 'backend/bootstrap.php';$row=query('SELECT password_hash FROM admins')->fetchColumn();echo json_encode(['hashed'=>str_starts_with($row,'$2y$'),'audit'=>(int)query('SELECT COUNT(*) FROM audit_log')->fetchColumn()]);",
-      ),
-    );
-    assert.equal(evidence.hashed, true);
-    assert.equal(evidence.audit, 3);
+    const [[{ password_hash: storedHash }]] = await rootConn.query('SELECT password_hash FROM `' + id + '`.admins');
+    const [[{ n: auditCount }]] = await rootConn.query('SELECT COUNT(*) n FROM `' + id + '`.audit_log');
+    assert.equal(/^\$2[aby]\$/.test(storedHash), true);
+    assert.equal(Number(auditCount), 3);
     const categoryInput = {
       id: 'cat_test',
       label: 'Belanja',
@@ -636,10 +616,10 @@ let server;
       await c.request('login', { ...credentials, password: 'wrong' }, 401);
     await c.request('login', credentials, 429);
     for (const route of [
-      '/backend/config.local.php',
-      '/backend/api.php',
+      '/backend/config.local.json',
+      '/backend/server.mjs',
       '/.git/config',
-      '/admin/../../backend/config.local.php',
+      '/admin/../../backend/config.local.json',
     ])
       assert.equal((await fetch(origin + route)).status, 404);
     console.log(
@@ -650,10 +630,11 @@ let server;
       server.kill();
       await new Promise((r) => server.once('exit', r));
     }
-    sql(
-      connect +
-        "$p->exec('DROP DATABASE IF EXISTS `'.$db.'`');$p->exec(\"DROP USER IF EXISTS '\".$db.\"'@'127.0.0.1'\");",
-    );
+    if (rootConn) {
+      await rootConn.query('DROP DATABASE IF EXISTS `' + id + '`');
+      await rootConn.query("DROP USER IF EXISTS '" + id + "'@'127.0.0.1'");
+      await rootConn.end();
+    }
   }
 })().catch((e) => {
   console.error(e.message);

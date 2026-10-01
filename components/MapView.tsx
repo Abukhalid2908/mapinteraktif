@@ -5,7 +5,10 @@ import LeafletMap from './LeafletMap';
 import Map3D from './Map3D';
 import type { Facility } from '@/lib/facilities';
 import type { Plot } from '@/lib/plots';
-import type { Infrastructure } from '@/lib/infrastructure';
+import type {
+  Infrastructure,
+  InfrastructureCategory,
+} from '@/lib/infrastructure';
 export type MapCamera = {
   center: [number, number];
   zoom: number;
@@ -22,6 +25,7 @@ export type MapProps = {
   selectedPlot?: Plot | null;
   onPlotSelect?: (plot: Plot) => void;
   infrastructure?: Infrastructure[];
+  infrastructureCategories?: InfrastructureCategory[];
   selectedInfrastructure?: Infrastructure | null;
   onInfrastructureSelect?: (item: Infrastructure) => void;
 };

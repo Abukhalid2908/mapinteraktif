@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import {
   distanceKm,
   filterFacilities,
+  lineLengthM,
   navigationUrl,
+  polygonAreaM2,
   validateDataset,
   publicDataset,
 } from '../lib/data.mjs';
@@ -36,6 +38,37 @@ await test('Haversine: identik, seperempat bumi, dan input invalid', () => {
     ) < 0.001,
   );
   assert.throws(() => distanceKm(facility, { latitude: NaN, longitude: 0 }));
+});
+await test('Luas polygon: persegi di ekuator, bentuk tidak tertutup, dan input tidak valid', () => {
+  const square = [
+    [0, 0],
+    [0.01, 0],
+    [0.01, 0.01],
+    [0, 0.01],
+    [0, 0],
+  ];
+  const area = polygonAreaM2(square);
+  assert.ok(area > 1200000 && area < 1250000, `luas tidak masuk akal: ${area}`);
+  assert.equal(
+    polygonAreaM2(square.slice(0, -1)),
+    area,
+    'harus sama walau titik penutup tidak diulang',
+  );
+  assert.equal(polygonAreaM2([[0, 0], [1, 1]]), 0);
+  assert.equal(polygonAreaM2([]), 0);
+});
+await test('Panjang jalur: dua segmen di ekuator dan titik tunggal', () => {
+  const length = lineLengthM([
+    [0, 0],
+    [0.01, 0],
+    [0.01, 0.01],
+  ]);
+  assert.ok(
+    length > 2200 && length < 2250,
+    `panjang tidak masuk akal: ${length}`,
+  );
+  assert.equal(lineLengthM([[0, 0]]), 0);
+  assert.equal(lineLengthM([]), 0);
 });
 await test('Pencarian menu, whitespace, kapitalisasi, dan AND kategori', () => {
   assert.equal(
