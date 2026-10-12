@@ -120,3 +120,11 @@ await test('Navigasi menolak demo dan hanya mengirim asal bila diminta', () => {
   );
   assert.throws(() => navigationUrl({ ...facility, demo: true }));
 });
+
+test('jam pengunjung yang tertinggal: updated_at dari server tidak dianggap masa depan bila diberi toleransi', () => {
+  const d = dataset();
+  d.updated_at = new Date(Date.now() + 5 * 60 * 1000).toISOString().replace(/\.\d+Z$/, 'Z'); // server 5 menit di depan jam klien
+  assert.ok(validateDataset(d).errors.length, 'tanpa toleransi harus ditolak (perilaku ketat server/editor)');
+  assert.deepEqual(validateDataset(d, { clockSkewMs: 24 * 3600 * 1000 }).errors, []);
+  assert.ok(validateDataset(d).errors.length, 'toleransi tidak boleh bocor ke pemanggilan berikutnya');
+});

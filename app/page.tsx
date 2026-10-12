@@ -108,7 +108,8 @@ export default function Home() {
       .then(async (r) => {
         if (!r.ok) throw Error('Data fasilitas gagal dimuat.');
         const d = (await r.json()) as import('@/lib/data.mjs').Dataset;
-        if (validateDataset(d, { publicOnly: true }).errors.length)
+        // toleransi 24 jam: jam PC pengunjung sering tidak persis sama dengan jam server (updated_at diisi jam server)
+        if (validateDataset(d, { publicOnly: true, clockSkewMs: 24 * 3600 * 1000 }).errors.length)
           throw Error('Dataset tidak valid. Silakan hubungi pengelola.');
         const definitions = d.categories || defaultCategories;
         setCategories(definitions);

@@ -3,6 +3,17 @@ import 'leaflet/dist/leaflet.css';
 import './style.css';
 import { markerIcons } from '../../lib/marker-icons';
 import { polygonAreaM2, lineLengthM } from '../../lib/data.mjs';
+// crypto.randomUUID() hanya ada di localhost/HTTPS; di http://IP-jaringan fungsinya tidak ada dan menambah titik gagal.
+// getRandomValues tersedia di semua konteks, jadi UUID v4 dibuat darinya bila perlu.
+function newUuid() {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6] & 0x0f) | 0x40;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  const h = Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
+
 const $ = (id) => document.getElementById(id);
 let csrf = '',
   setup = false,
@@ -280,7 +291,7 @@ $('new-category').onclick = () => {
     confirm('Abaikan perubahan kategori yang belum disimpan?')
   )
     editCategory({
-      id: 'cat_' + crypto.randomUUID().replaceAll('-', ''),
+      id: 'cat_' + newUuid().replaceAll('-', ''),
       label: '',
       icon: 'public_facility',
       enabled: 1,
@@ -576,7 +587,7 @@ $('new-plot').onclick = () => {
   selectPlot({
     revision: 0,
     plot: {
-      id: crypto.randomUUID(),
+      id: newUuid(),
       plot_number: '',
       status: 'draft',
       area_m2: '',
@@ -749,7 +760,7 @@ $('close-infra-types').onclick = () => {
 };
 $('new-infra-type').onclick = () =>
   editInfraType({
-    id: 'infra_' + crypto.randomUUID().replaceAll('-', ''),
+    id: 'infra_' + newUuid().replaceAll('-', ''),
     label: '',
     color: '#397fc0',
     enabled: 1,
@@ -966,7 +977,7 @@ function normalizeImportedItem(source, geometry) {
   )
     throw Error('Koordinat tidak sesuai dengan jenis geometri.');
   return {
-    id: crypto.randomUUID(),
+    id: newUuid(),
     name: String(source.name || source.nama).trim(),
     category,
     geometry_type: geometryType,
@@ -1131,7 +1142,7 @@ $('new-infra').onclick = () => {
     selectInfra({
       revision: 0,
       item: {
-        id: crypto.randomUUID(),
+        id: newUuid(),
         name: '',
         category: 'water_pipe',
         geometry_type: 'line',
@@ -1443,7 +1454,7 @@ $('add').onclick = () => {
     select({
       revision: 0,
       facility: {
-        id: crypto.randomUUID(),
+        id: newUuid(),
         name: '',
         category:
           categoryRows.find(

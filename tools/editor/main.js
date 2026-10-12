@@ -2,6 +2,17 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './style.css';
 import { validateDataset, publicDataset } from '../../lib/data.mjs';
+// crypto.randomUUID() hanya ada di localhost/HTTPS; di http://IP-jaringan fungsinya tidak ada dan menambah titik gagal.
+// getRandomValues tersedia di semua konteks, jadi UUID v4 dibuat darinya bila perlu.
+function newUuid() {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6] & 0x0f) | 0x40;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  const h = Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
+
 let data = {
     schema_version: 1,
     updated_at: new Date().toISOString(),
@@ -197,7 +208,7 @@ el('add').onclick = () => {
   if (!discardForm()) return;
   const center = map.getCenter();
   const f = {
-    id: crypto.randomUUID(),
+    id: newUuid(),
     name: 'Fasilitas baru',
     category: 'public_facility',
     latitude: center.lat,
