@@ -930,6 +930,25 @@ textarea:focus {
   font-weight: 800;
   box-shadow: 0 2px 8px #0006;
 }
+.infra-pin {
+  background: transparent !important;
+  overflow: visible;
+}
+.infra-pin-face {
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  box-shadow:
+    0 2px 0 #0003,
+    0 3px 6px #0004;
+}
+.infra-pin-face svg {
+  color: #fff;
+  width: 60%;
+  height: 60%;
+  filter: drop-shadow(0 1px 0 #0003);
+}
 .plot-browser {
   position: absolute;
   z-index: 500;

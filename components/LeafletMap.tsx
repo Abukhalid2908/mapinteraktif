@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type RefObject } from 'react';
 import { Plus, Minus, Maximize, RefreshCw } from 'lucide-react';
 import { groupPoints } from '@/lib/map-markers.mjs';
 import { markerFace, clusterChoices } from '@/lib/marker-elements';
+import { infraMarkerIcons } from '@/lib/infra-marker-icons';
 import { distanceKm } from '@/lib/data.mjs';
 import type * as Leaflet from 'leaflet';
 import type { MapCamera } from './MapView';
@@ -244,20 +245,32 @@ export default function LeafletMap({
           (entry) => entry.id === item.category,
         )?.color;
         const baseColor = notOk ? '#dc2626' : categoryColor || '#397fc0';
-        const shape =
-          item.geometry_type === 'point'
-            ? L.circleMarker(points[0], {
-                radius: active ? 11 : 8,
-                color: '#fff',
-                weight: 3,
-                fillColor: baseColor,
-                fillOpacity: 1,
-              })
-            : L.polyline(points, {
-                color: baseColor,
-                weight: active ? 7 : 5,
-                opacity: 0.9,
-              });
+        let shape: L.Marker | L.Polyline;
+        if (item.geometry_type === 'point') {
+          const size = active ? 32 : 26;
+          const icon = L.divIcon({
+            className: 'infra-pin',
+            html:
+              '<span class="infra-pin-face" style="background:' +
+              baseColor +
+              ';width:' +
+              size +
+              'px;height:' +
+              size +
+              'px">' +
+              (infraMarkerIcons[item.category] || infraMarkerIcons.other) +
+              '</span>',
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2],
+          });
+          shape = L.marker(points[0], { icon });
+        } else {
+          shape = L.polyline(points, {
+            color: baseColor,
+            weight: active ? 7 : 5,
+            opacity: 0.9,
+          });
+        }
         shape
           .bindTooltip(item.name + (notOk ? ' — Tidak OK' : ''), {
             direction: 'top',

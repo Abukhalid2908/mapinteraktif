@@ -2,6 +2,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './style.css';
 import { markerIcons } from '../../lib/marker-icons';
+import { infraMarkerIcons } from '../../lib/infra-marker-icons';
 import { polygonAreaM2, lineLengthM } from '../../lib/data.mjs';
 // crypto.randomUUID() hanya ada di localhost/HTTPS; di http://IP-jaringan fungsinya tidak ada dan menambah titik gagal.
 // getRandomValues tersedia di semua konteks, jadi UUID v4 dibuat darinya bila perlu.
@@ -813,17 +814,27 @@ function renderInfra(fit = true) {
   infraVertices?.remove();
   const latlngs = infraPoints.map(([lng, lat]) => [lat, lng]);
   const point = $('infra-geometry-mode').value === 'point';
+  const infraColor =
+    infraTypeRows.find((r) => r.id === $('i-category').value)?.color ||
+    '#397fc0';
   infraShape =
     point && latlngs.length
-      ? L.circleMarker(latlngs[0], {
-          radius: 10,
-          color: '#fff',
-          weight: 3,
-          fillColor: '#397fc0',
-          fillOpacity: 1,
+      ? L.marker(latlngs[0], {
+          icon: L.divIcon({
+            className: 'infra-pin',
+            html:
+              '<span class="infra-pin-face" style="background:' +
+              infraColor +
+              ';width:28px;height:28px">' +
+              (infraMarkerIcons[$('i-category').value] ||
+                infraMarkerIcons.other) +
+              '</span>',
+            iconSize: [28, 28],
+            iconAnchor: [14, 14],
+          }),
         }).addTo(infraMap)
       : latlngs.length
-        ? L.polyline(latlngs, { color: '#397fc0', weight: 5 }).addTo(infraMap)
+        ? L.polyline(latlngs, { color: infraColor, weight: 5 }).addTo(infraMap)
         : null;
   infraVertices = L.layerGroup().addTo(infraMap);
   latlngs.forEach((ll, index) => {
