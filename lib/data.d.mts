@@ -29,7 +29,7 @@ export function navigationUrl(
 export function streetViewUrl(f: Facility): string;
 export function validateDataset(
   data: unknown,
-  options?: { publicOnly?: boolean },
+  options?: { publicOnly?: boolean; clockSkewMs?: number },
 ): { errors: string[]; warnings: string[] };
 export function publicDataset(data: Dataset): Dataset;
 export function normalize(value: string): string;
